@@ -1,0 +1,26 @@
+# Materials File
+
+MakeNamedMaterial "mat3"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "mat5"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "mat4"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "mat2"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "mat1"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]

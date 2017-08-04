@@ -1,0 +1,7 @@
+# Materials File
+
+MakeNamedMaterial "Material.001"
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"color Kr" [0.69999999 0.69999999 0.69999999]
+	"string type" ["mirror"]

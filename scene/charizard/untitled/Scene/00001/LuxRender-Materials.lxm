@@ -1,0 +1,37 @@
+# Materials File
+
+Texture "D.001_color" "color" "imagemap"
+	"string filename" ["charizard/untitled/Scene/00001/11311693_10206652516133194_1256678895_n.jpg"]
+	"integer discardmipmaps" [0]
+	"float gain" [1.000000000000000]
+	"float gamma" [2.200000047683716]
+	"float maxanisotropy" [8.000000000000000]
+	"string wrap" ["repeat"]
+	"string mapping" ["uv"]
+	"float uscale" [1.000000000000000]
+	"float vscale" [-1.000000000000000]
+	"float udelta" [0.000000000000000]
+	"float vdelta" [1.000000000000000]
+
+MakeNamedMaterial "mat_1"
+	"texture Kd" ["D.001_color"]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+Texture "Kd_color" "color" "imagemap"
+	"string filename" ["charizard/untitled/Scene/00001/11311693_10206652516133194_1256678895_n.jpg"]
+	"integer discardmipmaps" [0]
+	"float gain" [1.000000000000000]
+	"float gamma" [2.200000047683716]
+	"float maxanisotropy" [8.000000000000000]
+	"string wrap" ["repeat"]
+	"string mapping" ["uv"]
+	"float uscale" [1.000000000000000]
+	"float vscale" [-1.000000000000000]
+	"float udelta" [0.000000000000000]
+	"float vdelta" [1.000000000000000]
+
+MakeNamedMaterial "mat_0"
+	"texture Kd" ["Kd_color"]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]

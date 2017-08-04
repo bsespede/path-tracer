@@ -1,0 +1,48 @@
+# Materials File
+
+Texture "metal1"
+	"string filename" ["texture/metal-1.jpg"]
+
+Texture "metal2"
+	"string filename" ["texture/metal-2.jpg"]
+
+MakeNamedMaterial "Material.006"
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"color Kr" [0.8 0.8 0.8]
+	"int roughness" [0.10]
+	"string type" ["mirror"]
+
+MakeNamedMaterial "Material.005"
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"color Kr" [0.9 0.9 0.9]
+	"int roughness" [0.10]
+	"string type" ["mirror"]
+
+MakeNamedMaterial "Material.001"
+	"texture Kd" [metal2]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.002"
+	"bool architectural" ["false"]
+	"float cauchyb" [0.000000000000000]
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"float index" [1.58]
+	"color Kr" [1 1 1]
+	"color Kt" [1 1 1]
+	"int roughness" [0.5]
+	"string type" ["glass"]
+
+MakeNamedMaterial "Material.003"
+	"texture Kr" [metal1]
+	"int roughness" [0.20]
+	"string type" ["metal2"]
+
+
+MakeNamedMaterial "Material.004"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]

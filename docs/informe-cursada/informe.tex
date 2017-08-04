@@ -1,0 +1,648 @@
+% Preview source code
+
+%% LyX 2.0.6 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=4cm,lmargin=3cm,rmargin=3cm}
+\usepackage{babel}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[unicode=true]
+ {hyperref}
+\usepackage{breakurl}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+%% Because html converters don't know tabularnewline
+\providecommand{\tabularnewline}{\\}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\date{}
+
+\makeatother
+
+\begin{document}
+
+\title{Computación Gráfica - Ray \& Path Tracing\vspace{2cm}
+}
+
+
+\author{Gonzalo Castiglione ($49138$) - Braulio Sepede ($51074$)}
+
+\maketitle
+\begin{center}
+{\huge{Grupo 2}}
+\par\end{center}{\huge \par}
+
+\vspace{4cm}
+
+
+\begin{center}
+\includegraphics[scale=0.5]{logo-itba-small}
+\par\end{center}
+
+\pagebreak{}
+
+
+\section*{\tableofcontents{}}
+
+\pagebreak{}
+
+
+\section{Definiciones}
+
+A fin de evitar ambiguedades en las explicaciones realizadas en el
+informe, se listan a continuación todos los términos que van a ser
+usados:
+\begin{description}
+\item [{Transform}] Representa una rotación, translación y escala. Implementado
+utilizando una matriz de $4x4$ doubles.
+\item [{Bounding~Volume}] Volumen en coordenada de mundo utilizado para
+encerrar formas complejas.
+
+\begin{description}
+\item [{Tipos:}] AABB o Sphere
+\end{description}
+\item [{Spatial}] Objeto que posee un Transform y Bounding Volume.
+\item [{Light}] Objeto con un color specular y difuse %
+\footnote{Especificaciones en: \ref{sec:luces}%
+}.
+\item [{Material}] Representa las cualidades ``físicas'' de un objeto%
+\footnote{Especificaciones en: \ref{sec:material}%
+}.
+\item [{Mesh}] Representa la forma de un objeto.
+
+\begin{description}
+\item [{Tipos:}] Triangle, Box, Sphere, Disc, Plane, FinitePlane
+\end{description}
+\item [{Geometry}] Spatial con un Material y un Mesh.
+\item [{Scene}] Conjunto de Lights y Spatials a ser tenidos en cuenta para
+el cálculo de un frame.
+\end{description}
+
+\section{Ray Tracer}
+
+
+\subsection{Luces\label{sec:luces}}
+
+Se implementaron los siguientes tipos de luces:
+\begin{itemize}
+\item Direccional
+\item Ambiental
+\item Puntual
+\item Spotlight
+
+\begin{itemize}
+\item Este tipo de luz es identica a una luz puntual, con la diferencia
+que se multiplica el resultado por un decay cuando el ángulo entre
+la dirección del spotlight y el rayo incidente es mayor al especificado.
+Este decay es calculado utilizando la siguiente formula:
+\[
+decay=max(ray.dir\bullet light.dir,\,0)^{spot\_exp}
+\]
+
+
+\begin{itemize}
+\item En donde $spot\_exp$ es una constante que define cuan rápudo va a
+set el deacimiento de la luz a partir que se pasa de la ``pantalla''.
+Cuanto maror es el valor para $spot\_exp$, mas brusco va a ser el
+cambio de intensidad de la luz una vez superado el ángulo máximo.
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+\subsection{Materiales\label{sec:material}}
+
+
+\subsubsection{Shader}
+
+Los métodos de shading implementados son: Lambert y Phong.
+
+
+\subsubsection{Tipos}
+
+En la tabla \ref{tab:tipos-de-materiales} se presentan todos los
+tipos de materiales disponibles que pueden ser aplicados a cada Geometry
+en la actual implementación:
+
+\begin{table}[H]
+\begin{centering}
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+ & Reflejos & Refraccion & Texturizable & Shader (default)\tabularnewline
+\hline 
+\hline 
+Matte & No & No & Si & Lambert\tabularnewline
+\hline 
+Glass & Si & Si & Si & N/A\tabularnewline
+\hline 
+Metal (shiny) & Si & No & Si & Phong\tabularnewline
+\hline 
+Mirror & Si & No & Si & N/A\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+
+\centering{}\caption{Tipos de materiales \label{tab:tipos-de-materiales} }
+\end{table}
+
+
+Para el caso del material glass, se implementó Fresnell.
+
+
+\subsubsection{Mix}
+
+Es posible crear un nuevo material mezcla de dos materiales existentes.
+Para la construccion del material mezcla, se realiza un $lerp$ %
+\footnote{http://en.wikipedia.org/wiki/Linear\_interpolation%
+} entre cada una de las constantes de ambos materiales entregados y
+se asigna el valor al material mix.
+
+La mezcla de materiales tiene como restricción que ambas texturas
+deben tener las mismas dimensiones. De lo contrario no es posible
+interpolarlas.
+
+Debido a que no es posible la aplicacion de $lerp$ sobre los campos
+``shader'' y ``tipo'' de un material, simplemente se dejan los
+valores especificados en el primer material.
+
+Ejemplo:
+\begin{itemize}
+\item Material 1: \{\textit{shader}: Lambert, \textit{texture}: t1, \textit{type}:
+Glass, \textit{ka} : ka1, ...\}
+\item Material 2: \{\textit{shader}: Phong, \textit{texture}: t2, \textit{type}
+: Metal, \textit{ka} : ka2, ...\}
+\item $\Rightarrow$ Material 3: \{\textit{shader} : \textbf{Lambert}, \textit{textur}e
+: lerp(t1, t2), \textit{type} : \textbf{Glass}, \textit{ka} : lerp(ka1,
+ka2), ....\}
+\end{itemize}
+
+\subsection{Antialiasing }
+
+Existen implementados dos métodos para anti-aliasing: Jittered y Uniform.
+Cada uno de estos parametrizable en el tamaño de la ventana a usar.
+
+
+\subsection{Problemas encontrados}
+\begin{itemize}
+\item Dificultad de debugging
+
+
+Siempre que el resultado de un ray trace da valores anormales, puede
+resultar sumamente  dificil encontrar la razón si se tiene en cuenta
+la cantidad de operaciones aritmeticas que se realizan hasta resolver
+el color. 
+
+
+La forma mas eficaz para solucionar estos casos por lo general consiste
+poner un único Geometry en escena y crear una imagen de un solo pixel
+(el rayo sale siempre con dirección $(0,0,-1)$) facilitando mucho
+las cuentas.
+\begin{itemize}
+\item El caso que mas remarcamos para esta categoría (costo mucho diagnosticar)
+sucedía al crear un Octree de triángulos. Lo que sucedía era que no
+se tenía bien implementado la verificación para detectar la intersección
+triángulo-AABB (OctreeNode). Produciendo imagenes como las siguientes:
+\end{itemize}
+
+\begin{center}
+\includegraphics[scale=0.45]{img/broken-charizard}
+\par\end{center}
+
+\item Representacion de los objetos (Eficiente vs mantenible)
+
+
+Durante toda la etapa de desarollo surgió la decisión entre realizar
+implementaciones que sean ineficientes pero muy fáciles de entender
+/ mantener o bien eficientes pero complicadas de entender (Por ejemplo:
+Repetir codigo para realizar una operación compleja o evitar crear
+demasiados objetos temporales para cuentas sencillas). 
+
+
+Muchas veces un código cortito puede parecer muy inocente, pero al
+ejecutarse tantas miles de veces, pequeños cambios hacen la diferencia.
+
+\item Opraciones con colores (sumas vs multiplicacion)
+
+
+Para el caso de los reflejos y refracciones, se tuvieron muchas dudas
+sobre si el color resultante de un reflejo o refraccion se debe sumar
+o multiplicar al color del material. Cada uno de los casos daba mejores
+resultados dependiendo de los materiales y cantidad de objetos.
+
+\item Condiciones de bordes / limites
+
+\begin{itemize}
+\item Para el caso del Box, hubieron problemas con los bordes de cada cara.
+El resultado de la colision pegaba muchas veces en la que se esperaba,
+y otras en la del otro lado.
+\end{itemize}
+
+\begin{center}
+\includegraphics[scale=0.6]{img/box-overlap}
+\par\end{center}
+\begin{itemize}
+\item En el caso del octree, sucedía que cuando el mesh era muy chico (pasaba
+para el caso de bunny.lux), el tamaño de cada nodo se volvía demasiado
+pequeño y aprecían algunos pequeños puntitos sobe el mesh debido a
+que el rayo traspasaba al nodo de octree y pegaba contra el de atrás
+directamente. El problema se solucionó poniendo una cota mínima para
+el tamaño de cada nodo de octree.
+
+
+En la imagen a continuación se muestra un mapa de profundidad de las
+colisiones removiendo la cota inferor del octree con un mesh de $75K$
+polígonos y un ancho aproximado de $0.03$ unidades para el mesh entero.
+
+\end{itemize}
+
+\begin{center}
+\includegraphics[scale=0.45]{img/bunny-dots-2}
+\par\end{center}
+
+\end{itemize}
+
+\subsection{Tiempos}
+
+En la tabla a continuación se muestran los resultados obtenidos con
+la aplicación para el cálculo de una imagen en con un procesador $i5$
+y $4$ Gb de $RAM$.
+\begin{itemize}
+\item Escenas:
+
+\begin{description}
+\item [{Escena~1}]~
+
+\begin{itemize}
+\item Stanford Bunny. Matte. ($69k$ polígonos)
+\item 2 Luces puntuales
+\end{itemize}
+\item [{Escena~2}]~
+
+\begin{itemize}
+\item Dos espejos enfrentados
+\item 3 Esferas: Metal, Glass y Matte entre los espejos.
+\item 1 disco matte (piso)
+\item 1 luz direccional
+\item 1 luz puntual
+\end{itemize}
+\item [{Escena~3}]~
+
+\begin{itemize}
+\item Stanford Bunny. Matte. ($69k$ polígonos)
+\item 1 Spot light
+\item 1 Disco Vidrio
+\end{itemize}
+\item [{Escena~4}]~
+
+\begin{itemize}
+\item Escena complea con$0.5M$ de triángulos
+\item 1 Spot light
+\item Tamaño de archivo fisico: $37$ $[Mb]$ (sin considerar texturas).
+\item Vasos de vidrio, cubiertos metalicos, platos y nombre del grupo (meshes).
+\end{itemize}
+\end{description}
+\item Configuraciones: 
+
+\begin{description}
+\item [{0}] Multi Thread. Cant reflejos: $0$. Cant. de Refracciones: $0$.
+AA: Uniform,$1$. Resolución: $640x480\,[px]$
+\item [{1}] Single Thread. Cant reflejos: $3$. Cant. de Refracciones:
+$5$. AA: Uniform: $1$. Resolución: Full HD %
+\footnote{http://es.wikipedia.org/wiki/1080p%
+}
+\item [{2}] Multi Thread. Cant reflejos: $3$. Cant. de Refracciones: $5$.
+AA: Uniform: $1$. Resolución: Full HD
+\item [{3}] Multi Thread. Cant reflejos: $3$. Cant. de Refracciones: $5$.
+AA: Jittered: $4$. Resolución: Full HD
+\end{description}
+\end{itemize}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+ & Conf. 0 {[}s{]} & Conf. 1{[}s{]} & Conf. 2 {[}s{]} & Conf. 3 {[}s{]}\tabularnewline
+\hline 
+\hline 
+Escena 1 & $9.4$ & $142.7$ & $90.0$ & $323.6$\tabularnewline
+\hline 
+Escena 2 & $1.3$ & $9.9$ & $6.4$ & $15.19$\tabularnewline
+\hline 
+Escena 3 & $3.2$ & $37.5$ & $16.1$ & $69.81$\tabularnewline
+\hline 
+Escena 4 & $2.1$ & $39.4$ & $26.5$ & $102.3$\tabularnewline
+\hline 
+\end{tabular}
+\par\end{center}
+
+
+\section{Path tracer}
+
+
+\subsection{Luces}
+
+Las luces implementadas incluyen todas las ya mencionadas en el ray
+tracer\ref{sec:luces}. Además, se agregaron area lights. 
+
+Un area light esta definido por un material que tiene asociado una
+luz. De esta forma, cualquier geometry de la escena podría ser una
+luz de cualquier tipo, en cualquier momento. Lo único que se requere
+ahora, es tener una forma para poder samplar el mesh asociado a este
+geometry y de esta forma poder calcular la iluminación directa producto
+de esta luz. Para esto, se asocia a interfaz Mesh un método sampler
+que se usa para crear samplings aleatorios sobre el mesh.
+
+Las area lights soportadas por la aplicación son las siguientes:
+\begin{itemize}
+\item Mesh light
+\item Rectange light
+\item Sphere light
+\end{itemize}
+Queda pendiente la implementación del cálculo de pérdida de energía
+de la luz debido a la distancia recorrida. No fue implementado por
+falta de tiempo en plazos de entrega.
+
+
+\subsection{Materiales}
+
+
+\subsection{Tipos}
+
+Los materiales disponibles son los mismos que los presentados en la
+sección\ref{sec:material} con la excepción de Phong. El uso de Phong
+en los metales fue reemplazado por Cook Torrance.
+
+
+\subsection{Sampling}
+
+Cada un vez que un rayo que salió de la camara choca contra un mesh,
+se obtiene su material. Según el tipo de material, la forma con la
+que el rayo vuelve a salir va a depender del tipo de sampler asociado.
+
+
+\subsubsection{Matte}
+
+En este caso, se usa un medio hemisferio cuyo centro es la normal
+al punto de colisión. En la siguiente imagen se muestra un sampling
+obtenido sobre un material matte.
+
+\begin{figure}[H]
+\begin{centering}
+\includegraphics[scale=0.3]{img/matte-sampling}
+\par\end{centering}
+
+\caption{Sampling sobre un material tipo matte}
+
+
+\end{figure}
+
+
+Los puntos fueron obtenidos guardando la dirección de salida sobre
+un material matte en la aplicación y luego renderizandolos con octave.
+
+
+\subsubsection{Metal}
+
+Para el caso del metal. El sampling dependera de las caracteristicas
+del metal. Esta propiedad esta definida por el valor de $1/roughness$.
+A mayor exponente, mas concentrados van a ser los rayo reflejados.
+
+En la imagen a continuación se muestran dos ejemplos de sampleos sobre
+un metal con una constante de $roughness=0.1$ (rojo) y otro con $roughness=0.04$
+(azul). Se puede ver que a medida que se decrementa el roughness.
+Mas parecido al reflejo de un espejo va a parecer.
+
+\begin{figure}[H]
+\begin{centering}
+\includegraphics[scale=0.5]{img/metal-sampling}
+\par\end{centering}
+
+\caption{Sampling sobre dos materiales tipo metal}
+\end{figure}
+
+
+Los puntos fueron obtenidos guardando la dirección de salida sobre
+un material metal en la aplicación y luego renderizandolos con octave.
+
+
+\subsection{Problemas encontrados}
+
+Entre los problemas encontrados, se encuentran todos los mencionados
+en la seccion de ray tracer y algunos nuevos:
+\begin{itemize}
+\item Resulta de interés el tiempo de debugging adicional requerido. Ya
+que cada escena necesita de varias decenas de samplings por pixel
+para que se vea interesante, el tiempo de construcción de cada frame
+requiere de varias veces el tiempo que un ray tracer emplearía.
+\item Otro detalle (super) importante es el del sampleo correcto del hemisferio.
+El detectar estos errores resulta MUY dificil debido a la cantidad
+de muestras que se requeire para poder ``visualizar'' el error.
+A cantinuación se muestran algunas imagenes obtenidas con un sampling
+incorrecto:
+\end{itemize}
+\begin{center}
+\includegraphics[scale=0.3]{img/bad-sampling-1}
+\par\end{center}
+
+\begin{center}
+\includegraphics[scale=0.3]{img/bad-sampling-2}
+\par\end{center}
+\begin{itemize}
+\item Otro detalle a agregar, es la dificulad que este algoritmo tiene para
+el cálculo de promedio de los $n$ caminos por cada pixel y a su vez
+de los $m$ samples de antialiasing para cada pixel ($m*n$ caminos
+en total) para el cálculo de un solo pixel de la imagen final. En
+la imagen a continuación puede verse un caso donde el promedio es
+incorrecto:
+\end{itemize}
+\begin{center}
+\includegraphics[scale=0.3]{img/bad-lightning}
+\par\end{center}
+\begin{itemize}
+\item Un último problema para la lista, tiene que ver con la elección de
+Octree como método de subdivisión espacial. La escena Sponza, tiene
+triángulos que están por afuera del rango máximo que se configuró
+incialmente para el rango del octree%
+\footnote{Resulta muy dificil el calculo dinamico de rango para un mesh debido
+a posibilidad de transformaciones y anidaciones de los mismos%
+}. Queda pendiente un cambio a una estructura que pueda sportar estos
+casos. No fue implementado por falta de tiempo.
+\end{itemize}
+
+\subsection{Tiempos}
+
+En la tabla a continuación se muestran los resultados obtenidos con
+la aplicación para el cálculo de una imagen en con un procesador $i5$
+y $4$ Gb de $RAM$.
+\begin{itemize}
+\item Escenas
+
+\begin{itemize}
+\item Cornell Box
+\item Metal 2
+\item Glass Bunny
+\end{itemize}
+\item Configuraciones: 
+
+\begin{description}
+\item [{0}] Multi Thread. Samples: $10$. Trace depth: $5$. AA: Uniform,$1$.
+\item [{1}] Multi Thread. Samples: $100$. Trace depth: $5$. AA: Uniform,$1$.
+\item [{2}] Multi Thread. Samples: $1000$. Trace depth: $5$. AA: Uniform,$1$.
+\item [{4}] Single Thread. Samples: $10$. Trace depth: $5$. AA: Uniform,$1$.
+\end{description}
+\end{itemize}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+ & Configuracion 1 $[s]$ & Configuracion 2 $[s]$ & Configuracion 3 $[s]$ & Configuracion4 $[s]$\tabularnewline
+\hline 
+\hline 
+Cornell Box & $18.8$ & $130.5$ & $1315.3$ & $78.3$\tabularnewline
+\hline 
+Metal 2 & $8.4$ & $70.6$ & $690.3$ & $32.4$\tabularnewline
+\hline 
+Glass bunny & $132.2$ & $1236.1$ & $10\, min+$ & $590.1$\tabularnewline
+\hline 
+\end{tabular}
+\par\end{center}
+
+
+\section{División espacial}
+
+El método de division espacial utilizado en la implementación actual
+hace uso de octrees. Existen dos usos para este tipo de árbol en la
+aplicación:
+\begin{description}
+\item [{Scene}] Ordena los spatials que se encuentran en la escena principal.
+Cada Spatial se envuelve con un BoundingVolume y se inserta en el
+octree.
+\item [{Triangles}] Para la resolución de colisiones contra triangle meshes,
+es necesario mantener una división espacial de los triángulos que
+lo conforman para una búsqueda eficiente. Por lo general, los meshes
+suelen tener una distribución bastante homogenea de los triángulos
+que lo en cuanto a distribución espacial, haciendo muy conveniente
+el uso de octrees en estos casos. Es por esto que se consideró a este
+como el mejor candidato a implementar en la apliacción.
+\end{description}
+Para la resolución de objetos que caen entre dos nodos del octree,
+se resolvió que se objeto se guarda repetido (una vez en cada nodo).
+
+
+\section{Rendering}
+
+Se implementaron tres métodos de rendering diferentes. Estos son los
+siguientes:
+\begin{description}
+\item [{Normal}] Se dibuja un mapa de normales de cada colisión. No se
+calculan luces, refracciones ni reflejos.
+\item [{Profundidad}] Se dibuja un mapa de prfundidad de cada colisión.
+No se calculan luces, refracciones ni reflejos.
+\item [{Luces}] Se dibuja el color la geometría que produjo la colisión.
+Tiene en cuenta las luces, los reflejos y las refracciones.
+\end{description}
+
+\section{Corrección de color}
+
+Dependiendo de la situación, puede darse que los valores de los colores
+resultantes tenga valores fuera de rango. Para poder representar estos
+valores en una imagen, es necesario aplicar algun método de corrección
+de color. Se tienen implementados dos métodos para realizar el ajuste
+de rango:
+\begin{description}
+\item [{Corte}] Cuando un valor se encuentra por encima de $1$. Se lo
+reemplaza por $1$. De lo contrario, queda sin cambios.
+\item [{Dynamic~Range~Compression}] El método de corte produce que cualquier
+valor de color que sea superior a $1$ siempre se va a ver igual a
+cualquier otro valor superior a $1$ (no importa de cuanto sea la
+diferecia). Esto hace parecer que dos objetos se vean parecidos (o
+iguales) mas alla de que en realidad no lo sean y sucede debdo a que
+se pierde la información real del color al pisar su valor. Este método
+se encarga de normalizar todos los valores según el máximo que exista
+en la imagen (en ese canal). Puede encontrarse una explicación mas
+detallada en \href{http://en.wikipedia.org/wiki/Dynamic_range}{http://en.wikipedia.org/wiki/Dynamic\_{}range}
+\end{description}
+
+\section{Multi Threading}
+
+La división de tareas dentro de la aplicación se logra dividiendo
+la imagen en conjuntos de filas de tamaño fijo ($50$ por default).
+La cantidad de threads que van a crearse va a ser igual a la cantidad
+de cores disponibles %
+\footnote{ver: https://docs.oracle.com/javase/7/docs/api/java/lang/Runtime.html\#availableProcessors()%
+} que tenga la $CPU$ que se encuentre corriendo la aplicación. 
+
+Cada uno de los threads va a a ir tomando de a un conjunto de filas
+y creando el pedacito de imagen correspondiente. Cada vez que un thread
+termina con las filas que se le fueron asignadas, simplemente toma
+el próximo disponible y repite hasta que no queden más. 
+
+El frame queda construido completamente cuando todos los threads terminan
+su ejecución.
+
+
+\section{Configuración y ejecución}
+
+Parametros aceptados por linea de comandos:
+\begin{description}
+\item [{help}] Opcional. Flag. Imprime la lista de parametros y lo que
+cada uno significa.
+\item [{o}] Opcional. Nombre del archivo de salida.
+\item [{i}] Nombre del archivo lux de entrada.
+\item [{time}] Opcional. Flag. Mediciones de los tiempos empleados en el
+render.
+\item [{aa}] Numerico. Cantidad de muestras de antialiasing.
+\item [{benchmark}] Opcional. Numérico. Cantidad de frames consecutivos
+a crear.
+
+
+La creacion del archivo fisico (PNG) se realiza únicamente para el
+primer frame.
+
+\item [{d}] Opcional. Numérico. Define el ray depth de reflejos y refracciones.
+
+
+La profundidad para las refracciones va a ser el valor de (d + 2)
+
+\item [{r}] Opcional. Define el tipo de render a usar. 
+
+\begin{description}
+\item [{Valores:}] normal, distance, light.
+\end{description}
+\item [{correction}] Opcional. Tipo de correción de la imagen. 
+
+\begin{description}
+\item [{d}] Método de compresión de rango dinámico.
+\item [{c}] Método de corte.
+\end{description}
+\item [{gui}] Opcional. Flag. Abrir interfaz gráfica. Consideraciones:
+Tiene como única intención el debugging de una escena. Esta aún en
+etapa alpha.
+\item [{pathtracer}] Opcional. Utilizar metodo de path tracing
+\item [{tr}] Define el la cantidad de hops que un camino puede tener (solo
+­pathtracer)
+\item [{s}] Define la cantidad de samples por pixel (solo ­pathtracer)
+\end{description}
+
+\section{Ejemplos}
+
+Todas las imagenes de prueba (y videos) se encuentran en la carpeta
+\textit{samples/pictures} y \textit{samples/videos }del repositorio.
+
+
+\section{Fuentes consultadas}
+\begin{itemize}
+\item Fundamentals of Computer Graphics. Third edition. Peter Shirley
+\item Ray Tracing From The Ground Up. Kevin Suffern. 
+\item \href{http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf}{http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection\_{}refraction.pdf}
+\item \href{http://www.cs.rpi.edu/~cutler/classes/advancedgraphics/F05/lectures/13_ray_tracing.pdf}{http://www.cs.rpi.edu/$\sim$cutler/classes/advancedgraphics/F05/lectures/13\_{}ray\_{}tracing.pdf}
+\item \href{http://www.cs.utah.edu/~shirley/books/fcg2/rt.pdf}{http://www.cs.utah.edu/$\sim$shirley/books/fcg2/rt.pdf}
+\item \href{http://courses.cs.washington.edu/courses/cse457/10au/lectures/markup/ray-tracing-markup.pdf}{http://courses.cs.washington.edu/courses/cse457/10au/lectures/markup/ray-tracing-markup.pdf}
+\item \href{https://en.wikipedia.org/wiki/Schlick\%27s_approximation}{https://en.wikipedia.org/wiki/Schlick's\_{}approximation}
+\item \href{http://ruh.li/GraphicsCookTorrance.html}{http://ruh.li/GraphicsCookTorrance.html}
+\item Computación Gráfica - Clase 7, 8, 9 y 10\end{itemize}
+
+\end{document}
+

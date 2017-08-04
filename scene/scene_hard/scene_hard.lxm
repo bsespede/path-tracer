@@ -1,0 +1,69 @@
+# Materials File
+
+MakeNamedMaterial "Material.013"
+	"color Kd" [0.63999999 0.54234201 0.00000000]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.010"
+	"color Kd" [1 1 1]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.008"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.009"
+	"bool architectural" ["false"]
+	"float cauchyb" [0.000000000000000]
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"float index" [1.519999980926514]
+	"color Kr" [0.69999999 0.69999999 0.69999999]
+	"color Kt" [1.00000000 1.00000000 1.00000000]
+	"int roughness" [10]
+	"string type" ["glass"]
+
+MakeNamedMaterial "Material.004"
+	"bool architectural" ["false"]
+	"float cauchyb" [0.000000000000000]
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"float index" [1.519999980926514]
+	"color Kr" [0.69999999 0.69999999 0.69999999]
+	"color Kt" [1.00000000 1.00000000 1.00000000]
+	"int roughness" [10]
+	"string type" ["glass"]
+
+MakeNamedMaterial "Material.006"
+	"float uroughness" [0.075000002980232]
+	"float vroughness" [0.075000002980232]
+	"color Kr" [1 1 1]
+	"int roughness" [10]
+	"string type" ["metal2"]
+
+MakeNamedMaterial "Material.007"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.005"
+	"color Kd" [0.63999999 0.63999999 0.63999999]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.003"
+	"float uroughness" [0.075000002980232]
+	"float vroughness" [0.075000002980232]
+	"color Kr" [1 1 1]
+	"int roughness" [10]
+	"string type" ["metal2"]
+
+MakeNamedMaterial "Material.002"
+	"float uroughness" [0.075000002980232]
+	"float vroughness" [0.075000002980232]
+	"color Kr" [1 1 1]
+	"int roughness" [10]
+	"string type" ["metal2"]

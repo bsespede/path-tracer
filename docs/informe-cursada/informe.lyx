@@ -1,0 +1,2553 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\date{}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 4cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Computación Gráfica - Ray & Path Tracing
+\begin_inset VSpace 2cm
+\end_inset
+
+
+\end_layout
+
+\begin_layout Author
+Gonzalo Castiglione (
+\begin_inset Formula $49138$
+\end_inset
+
+) - Braulio Sepede (
+\begin_inset Formula $51074$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\size huge
+Grupo 2
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace 4cm
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename logo-itba-small.png
+	lyxscale 50
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Definiciones
+\end_layout
+
+\begin_layout Standard
+A fin de evitar ambiguedades en las explicaciones realizadas en el informe,
+ se listan a continuación todos los términos que van a ser usados:
+\end_layout
+
+\begin_layout Description
+Transform Representa una rotación, translación y escala.
+ Implementado utilizando una matriz de 
+\begin_inset Formula $4x4$
+\end_inset
+
+ doubles.
+\end_layout
+
+\begin_layout Description
+Bounding
+\begin_inset space ~
+\end_inset
+
+Volume Volumen en coordenada de mundo utilizado para encerrar formas complejas.
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Tipos: AABB o Sphere
+\end_layout
+
+\end_deeper
+\begin_layout Description
+Spatial Objeto que posee un Transform y Bounding Volume.
+\end_layout
+
+\begin_layout Description
+Light Objeto con un color specular y difuse 
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Especificaciones en: 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:luces"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+Material Representa las cualidades 
+\begin_inset Quotes eld
+\end_inset
+
+físicas
+\begin_inset Quotes erd
+\end_inset
+
+ de un objeto
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Especificaciones en: 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:material"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+Mesh Representa la forma de un objeto.
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Tipos: Triangle, Box, Sphere, Disc, Plane, FinitePlane
+\end_layout
+
+\end_deeper
+\begin_layout Description
+Geometry Spatial con un Material y un Mesh.
+\end_layout
+
+\begin_layout Description
+Scene Conjunto de Lights y Spatials a ser tenidos en cuenta para el cálculo
+ de un frame.
+\end_layout
+
+\begin_layout Section
+Ray Tracer
+\end_layout
+
+\begin_layout Subsection
+Luces
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:luces"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Se implementaron los siguientes tipos de luces:
+\end_layout
+
+\begin_layout Itemize
+Direccional
+\end_layout
+
+\begin_layout Itemize
+Ambiental
+\end_layout
+
+\begin_layout Itemize
+Puntual
+\end_layout
+
+\begin_layout Itemize
+Spotlight
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Este tipo de luz es identica a una luz puntual, con la diferencia que se
+ multiplica el resultado por un decay cuando el ángulo entre la dirección
+ del spotlight y el rayo incidente es mayor al especificado.
+ Este decay es calculado utilizando la siguiente formula:
+\begin_inset Formula 
+\[
+decay=max(ray.dir\bullet light.dir,\,0)^{spot\_exp}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+En donde 
+\begin_inset Formula $spot\_exp$
+\end_inset
+
+ es una constante que define cuan rápudo va a set el deacimiento de la luz
+ a partir que se pasa de la 
+\begin_inset Quotes eld
+\end_inset
+
+pantalla
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Cuanto maror es el valor para 
+\begin_inset Formula $spot\_exp$
+\end_inset
+
+, mas brusco va a ser el cambio de intensidad de la luz una vez superado
+ el ángulo máximo.
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Subsection
+Materiales
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:material"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Shader
+\end_layout
+
+\begin_layout Standard
+Los métodos de shading implementados son: Lambert y Phong.
+\end_layout
+
+\begin_layout Subsubsection
+Tipos
+\end_layout
+
+\begin_layout Standard
+En la tabla 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:tipos-de-materiales"
+
+\end_inset
+
+ se presentan todos los tipos de materiales disponibles que pueden ser aplicados
+ a cada Geometry en la actual implementación:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Reflejos
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Refraccion
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Texturizable
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Shader (default)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Matte
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Lambert
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Glass
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Metal (shiny)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Phong
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Mirror
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Tipos de materiales 
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:tipos-de-materiales"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Para el caso del material glass, se implementó Fresnell.
+\end_layout
+
+\begin_layout Subsubsection
+Mix
+\end_layout
+
+\begin_layout Standard
+Es posible crear un nuevo material mezcla de dos materiales existentes.
+ Para la construccion del material mezcla, se realiza un 
+\begin_inset Formula $lerp$
+\end_inset
+
+ 
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://en.wikipedia.org/wiki/Linear_interpolation
+\end_layout
+
+\end_inset
+
+ entre cada una de las constantes de ambos materiales entregados y se asigna
+ el valor al material mix.
+\end_layout
+
+\begin_layout Standard
+La mezcla de materiales tiene como restricción que ambas texturas deben
+ tener las mismas dimensiones.
+ De lo contrario no es posible interpolarlas.
+\end_layout
+
+\begin_layout Standard
+Debido a que no es posible la aplicacion de 
+\begin_inset Formula $lerp$
+\end_inset
+
+ sobre los campos 
+\begin_inset Quotes eld
+\end_inset
+
+shader
+\begin_inset Quotes erd
+\end_inset
+
+ y 
+\begin_inset Quotes eld
+\end_inset
+
+tipo
+\begin_inset Quotes erd
+\end_inset
+
+ de un material, simplemente se dejan los valores especificados en el primer
+ material.
+\end_layout
+
+\begin_layout Standard
+Ejemplo:
+\end_layout
+
+\begin_layout Itemize
+Material 1: {
+\shape italic
+shader
+\shape default
+: Lambert, 
+\shape italic
+texture
+\shape default
+: t1, 
+\shape italic
+type
+\shape default
+: Glass, 
+\shape italic
+ka
+\shape default
+ : ka1, ...}
+\end_layout
+
+\begin_layout Itemize
+Material 2: {
+\shape italic
+shader
+\shape default
+: Phong, 
+\shape italic
+texture
+\shape default
+: t2, 
+\shape italic
+type
+\shape default
+ : Metal, 
+\shape italic
+ka
+\shape default
+ : ka2, ...}
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\Rightarrow$
+\end_inset
+
+ Material 3: {
+\shape italic
+shader
+\shape default
+ : 
+\series bold
+Lambert
+\series default
+, 
+\shape italic
+textur
+\shape default
+e : lerp(t1, t2), 
+\shape italic
+type
+\shape default
+ : 
+\series bold
+Glass
+\series default
+, 
+\shape italic
+ka
+\shape default
+ : lerp(ka1, ka2), ....}
+\end_layout
+
+\begin_layout Subsection
+Antialiasing 
+\end_layout
+
+\begin_layout Standard
+Existen implementados dos métodos para anti-aliasing: Jittered y Uniform.
+ Cada uno de estos parametrizable en el tamaño de la ventana a usar.
+\end_layout
+
+\begin_layout Subsection
+Problemas encontrados
+\end_layout
+
+\begin_layout Itemize
+Dificultad de debugging
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Siempre que el resultado de un ray trace da valores anormales, puede resultar
+ sumamente  dificil encontrar la razón si se tiene en cuenta la cantidad
+ de operaciones aritmeticas que se realizan hasta resolver el color.
+ 
+\end_layout
+
+\begin_layout Standard
+La forma mas eficaz para solucionar estos casos por lo general consiste
+ poner un único Geometry en escena y crear una imagen de un solo pixel (el
+ rayo sale siempre con dirección 
+\begin_inset Formula $(0,0,-1)$
+\end_inset
+
+) facilitando mucho las cuentas.
+\end_layout
+
+\begin_layout Itemize
+El caso que mas remarcamos para esta categoría (costo mucho diagnosticar)
+ sucedía al crear un Octree de triángulos.
+ Lo que sucedía era que no se tenía bien implementado la verificación para
+ detectar la intersección triángulo-AABB (OctreeNode).
+ Produciendo imagenes como las siguientes:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/broken-charizard.jpg
+	lyxscale 70
+	scale 45
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Representacion de los objetos (Eficiente vs mantenible)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Durante toda la etapa de desarollo surgió la decisión entre realizar implementac
+iones que sean ineficientes pero muy fáciles de entender / mantener o bien
+ eficientes pero complicadas de entender (Por ejemplo: Repetir codigo para
+ realizar una operación compleja o evitar crear demasiados objetos temporales
+ para cuentas sencillas).
+ 
+\end_layout
+
+\begin_layout Standard
+Muchas veces un código cortito puede parecer muy inocente, pero al ejecutarse
+ tantas miles de veces, pequeños cambios hacen la diferencia.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Opraciones con colores (sumas vs multiplicacion)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Para el caso de los reflejos y refracciones, se tuvieron muchas dudas sobre
+ si el color resultante de un reflejo o refraccion se debe sumar o multiplicar
+ al color del material.
+ Cada uno de los casos daba mejores resultados dependiendo de los materiales
+ y cantidad de objetos.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Condiciones de bordes / limites
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Para el caso del Box, hubieron problemas con los bordes de cada cara.
+ El resultado de la colision pegaba muchas veces en la que se esperaba,
+ y otras en la del otro lado.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/box-overlap.jpg
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+En el caso del octree, sucedía que cuando el mesh era muy chico (pasaba
+ para el caso de bunny.lux), el tamaño de cada nodo se volvía demasiado pequeño
+ y aprecían algunos pequeños puntitos sobe el mesh debido a que el rayo
+ traspasaba al nodo de octree y pegaba contra el de atrás directamente.
+ El problema se solucionó poniendo una cota mínima para el tamaño de cada
+ nodo de octree.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+En la imagen a continuación se muestra un mapa de profundidad de las colisiones
+ removiendo la cota inferor del octree con un mesh de 
+\begin_inset Formula $75K$
+\end_inset
+
+ polígonos y un ancho aproximado de 
+\begin_inset Formula $0.03$
+\end_inset
+
+ unidades para el mesh entero.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/bunny-dots-2.jpg
+	lyxscale 70
+	scale 45
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Tiempos
+\end_layout
+
+\begin_layout Standard
+En la tabla a continuación se muestran los resultados obtenidos con la aplicació
+n para el cálculo de una imagen en con un procesador 
+\begin_inset Formula $i5$
+\end_inset
+
+ y 
+\begin_inset Formula $4$
+\end_inset
+
+ Gb de 
+\begin_inset Formula $RAM$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Escenas:
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Escena
+\begin_inset space ~
+\end_inset
+
+1
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Stanford Bunny.
+ Matte.
+ (
+\begin_inset Formula $69k$
+\end_inset
+
+ polígonos)
+\end_layout
+
+\begin_layout Itemize
+2 Luces puntuales
+\end_layout
+
+\end_deeper
+\begin_layout Description
+Escena
+\begin_inset space ~
+\end_inset
+
+2
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Dos espejos enfrentados
+\end_layout
+
+\begin_layout Itemize
+3 Esferas: Metal, Glass y Matte entre los espejos.
+\end_layout
+
+\begin_layout Itemize
+1 disco matte (piso)
+\end_layout
+
+\begin_layout Itemize
+1 luz direccional
+\end_layout
+
+\begin_layout Itemize
+1 luz puntual
+\end_layout
+
+\end_deeper
+\begin_layout Description
+Escena
+\begin_inset space ~
+\end_inset
+
+3
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Stanford Bunny.
+ Matte.
+ (
+\begin_inset Formula $69k$
+\end_inset
+
+ polígonos)
+\end_layout
+
+\begin_layout Itemize
+1 Spot light
+\end_layout
+
+\begin_layout Itemize
+1 Disco Vidrio
+\end_layout
+
+\end_deeper
+\begin_layout Description
+Escena
+\begin_inset space ~
+\end_inset
+
+4
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Escena complea con
+\begin_inset Formula $0.5M$
+\end_inset
+
+ de triángulos
+\end_layout
+
+\begin_layout Itemize
+1 Spot light
+\end_layout
+
+\begin_layout Itemize
+Tamaño de archivo fisico: 
+\begin_inset Formula $37$
+\end_inset
+
+ 
+\begin_inset Formula $[Mb]$
+\end_inset
+
+ (sin considerar texturas).
+\end_layout
+
+\begin_layout Itemize
+Vasos de vidrio, cubiertos metalicos, platos y nombre del grupo (meshes).
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+Configuraciones: 
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+0 Multi Thread.
+ Cant reflejos: 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ Cant.
+ de Refracciones: 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ AA: Uniform,
+\begin_inset Formula $1$
+\end_inset
+
+.
+ Resolución: 
+\begin_inset Formula $640x480\,[px]$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+1 Single Thread.
+ Cant reflejos: 
+\begin_inset Formula $3$
+\end_inset
+
+.
+ Cant.
+ de Refracciones: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform: 
+\begin_inset Formula $1$
+\end_inset
+
+.
+ Resolución: Full HD 
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://es.wikipedia.org/wiki/1080p
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+2 Multi Thread.
+ Cant reflejos: 
+\begin_inset Formula $3$
+\end_inset
+
+.
+ Cant.
+ de Refracciones: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform: 
+\begin_inset Formula $1$
+\end_inset
+
+.
+ Resolución: Full HD
+\end_layout
+
+\begin_layout Description
+3 Multi Thread.
+ Cant reflejos: 
+\begin_inset Formula $3$
+\end_inset
+
+.
+ Cant.
+ de Refracciones: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Jittered: 
+\begin_inset Formula $4$
+\end_inset
+
+.
+ Resolución: Full HD
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conf.
+ 0 [s]
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conf.
+ 1[s]
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conf.
+ 2 [s]
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conf.
+ 3 [s]
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Escena 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $9.4$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $142.7$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $90.0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $323.6$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Escena 2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1.3$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $9.9$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $6.4$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $15.19$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Escena 3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $3.2$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $37.5$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $16.1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $69.81$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Escena 4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $2.1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $39.4$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $26.5$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $102.3$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Path tracer
+\end_layout
+
+\begin_layout Subsection
+Luces
+\end_layout
+
+\begin_layout Standard
+Las luces implementadas incluyen todas las ya mencionadas en el ray tracer
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:luces"
+
+\end_inset
+
+.
+ Además, se agregaron area lights.
+ 
+\end_layout
+
+\begin_layout Standard
+Un area light esta definido por un material que tiene asociado una luz.
+ De esta forma, cualquier geometry de la escena podría ser una luz de cualquier
+ tipo, en cualquier momento.
+ Lo único que se requere ahora, es tener una forma para poder samplar el
+ mesh asociado a este geometry y de esta forma poder calcular la iluminación
+ directa producto de esta luz.
+ Para esto, se asocia a interfaz Mesh un método sampler que se usa para
+ crear samplings aleatorios sobre el mesh.
+\end_layout
+
+\begin_layout Standard
+Las area lights soportadas por la aplicación son las siguientes:
+\end_layout
+
+\begin_layout Itemize
+Mesh light
+\end_layout
+
+\begin_layout Itemize
+Rectange light
+\end_layout
+
+\begin_layout Itemize
+Sphere light
+\end_layout
+
+\begin_layout Standard
+Queda pendiente la implementación del cálculo de pérdida de energía de la
+ luz debido a la distancia recorrida.
+ No fue implementado por falta de tiempo en plazos de entrega.
+\end_layout
+
+\begin_layout Subsection
+Materiales
+\end_layout
+
+\begin_layout Subsection
+Tipos
+\end_layout
+
+\begin_layout Standard
+Los materiales disponibles son los mismos que los presentados en la sección
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:material"
+
+\end_inset
+
+ con la excepción de Phong.
+ El uso de Phong en los metales fue reemplazado por Cook Torrance.
+\end_layout
+
+\begin_layout Subsection
+Sampling
+\end_layout
+
+\begin_layout Standard
+Cada un vez que un rayo que salió de la camara choca contra un mesh, se
+ obtiene su material.
+ Según el tipo de material, la forma con la que el rayo vuelve a salir va
+ a depender del tipo de sampler asociado.
+\end_layout
+
+\begin_layout Subsubsection
+Matte
+\end_layout
+
+\begin_layout Standard
+En este caso, se usa un medio hemisferio cuyo centro es la normal al punto
+ de colisión.
+ En la siguiente imagen se muestra un sampling obtenido sobre un material
+ matte.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/matte-sampling.png
+	lyxscale 10
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Sampling sobre un material tipo matte
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Los puntos fueron obtenidos guardando la dirección de salida sobre un material
+ matte en la aplicación y luego renderizandolos con octave.
+\end_layout
+
+\begin_layout Subsubsection
+Metal
+\end_layout
+
+\begin_layout Standard
+Para el caso del metal.
+ El sampling dependera de las caracteristicas del metal.
+ Esta propiedad esta definida por el valor de 
+\begin_inset Formula $1/roughness$
+\end_inset
+
+.
+ A mayor exponente, mas concentrados van a ser los rayo reflejados.
+\end_layout
+
+\begin_layout Standard
+En la imagen a continuación se muestran dos ejemplos de sampleos sobre un
+ metal con una constante de 
+\begin_inset Formula $roughness=0.1$
+\end_inset
+
+ (rojo) y otro con 
+\begin_inset Formula $roughness=0.04$
+\end_inset
+
+ (azul).
+ Se puede ver que a medida que se decrementa el 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+roughness.
+ Mas parecido al reflejo de un espejo va a parecer.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/metal-sampling.png
+	lyxscale 10
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Sampling sobre dos materiales tipo metal
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Los puntos fueron obtenidos guardando la dirección de salida sobre un material
+ metal en la aplicación y luego renderizandolos con octave.
+\end_layout
+
+\begin_layout Subsection
+Problemas encontrados
+\end_layout
+
+\begin_layout Standard
+Entre los problemas encontrados, se encuentran todos los mencionados en
+ la seccion de ray tracer y algunos nuevos:
+\end_layout
+
+\begin_layout Itemize
+Resulta de interés el tiempo de debugging adicional requerido.
+ Ya que cada escena necesita de varias decenas de samplings por pixel para
+ que se vea interesante, el tiempo de construcción de cada frame requiere
+ de varias veces el tiempo que un ray tracer emplearía.
+\end_layout
+
+\begin_layout Itemize
+Otro detalle (super) importante es el del sampleo correcto del hemisferio.
+ El detectar estos errores resulta MUY dificil debido a la cantidad de muestras
+ que se requeire para poder 
+\begin_inset Quotes eld
+\end_inset
+
+visualizar
+\begin_inset Quotes erd
+\end_inset
+
+ el error.
+ A cantinuación se muestran algunas imagenes obtenidas con un sampling incorrect
+o:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/bad-sampling-1.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/bad-sampling-2.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Otro detalle a agregar, es la dificulad que este algoritmo tiene para el
+ cálculo de promedio de los 
+\begin_inset Formula $n$
+\end_inset
+
+ caminos por cada pixel y a su vez de los 
+\begin_inset Formula $m$
+\end_inset
+
+ samples de antialiasing para cada pixel (
+\begin_inset Formula $m*n$
+\end_inset
+
+ caminos en total) para el cálculo de un solo pixel de la imagen final.
+ En la imagen a continuación puede verse un caso donde el promedio es incorrecto
+:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename img/bad-lightning.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Un último problema para la lista, tiene que ver con la elección de Octree
+ como método de subdivisión espacial.
+ La escena Sponza, tiene triángulos que están por afuera del rango máximo
+ que se configuró incialmente para el rango del octree
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Resulta muy dificil el calculo dinamico de rango para un mesh debido a posibilid
+ad de transformaciones y anidaciones de los mismos
+\end_layout
+
+\end_inset
+
+.
+ Queda pendiente un cambio a una estructura que pueda sportar estos casos.
+ No fue implementado por falta de tiempo.
+\end_layout
+
+\begin_layout Subsection
+Tiempos
+\end_layout
+
+\begin_layout Standard
+En la tabla a continuación se muestran los resultados obtenidos con la aplicació
+n para el cálculo de una imagen en con un procesador 
+\begin_inset Formula $i5$
+\end_inset
+
+ y 
+\begin_inset Formula $4$
+\end_inset
+
+ Gb de 
+\begin_inset Formula $RAM$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Escenas
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Cornell Box
+\end_layout
+
+\begin_layout Itemize
+Metal 2
+\end_layout
+
+\begin_layout Itemize
+Glass Bunny
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Configuraciones: 
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+0 Multi Thread.
+ Samples: 
+\begin_inset Formula $10$
+\end_inset
+
+.
+ Trace depth: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform,
+\begin_inset Formula $1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+1 Multi Thread.
+ Samples: 
+\begin_inset Formula $100$
+\end_inset
+
+.
+ Trace depth: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform,
+\begin_inset Formula $1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+2 Multi Thread.
+ Samples: 
+\begin_inset Formula $1000$
+\end_inset
+
+.
+ Trace depth: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform,
+\begin_inset Formula $1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+4 Single Thread.
+ Samples: 
+\begin_inset Formula $10$
+\end_inset
+
+.
+ Trace depth: 
+\begin_inset Formula $5$
+\end_inset
+
+.
+ AA: Uniform,
+\begin_inset Formula $1$
+\end_inset
+
+.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Configuracion 1 
+\begin_inset Formula $[s]$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Configuracion 2 
+\begin_inset Formula $[s]$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Configuracion 3 
+\begin_inset Formula $[s]$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Configuracion4 
+\begin_inset Formula $[s]$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Cornell Box
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $18.8$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $130.5$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1315.3$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $78.3$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Metal 2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $8.4$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $70.6$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $690.3$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $32.4$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Glass bunny
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $132.2$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1236.1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10\, min+$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $590.1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+División espacial
+\end_layout
+
+\begin_layout Standard
+El método de division espacial utilizado en la implementación actual hace
+ uso de octrees.
+ Existen dos usos para este tipo de árbol en la aplicación:
+\end_layout
+
+\begin_layout Description
+Scene Ordena los spatials que se encuentran en la escena principal.
+ Cada Spatial se envuelve con un BoundingVolume y se inserta en el octree.
+\end_layout
+
+\begin_layout Description
+Triangles Para la resolución de colisiones contra triangle meshes, es necesario
+ mantener una división espacial de los triángulos que lo conforman para
+ una búsqueda eficiente.
+ Por lo general, los meshes suelen tener una distribución bastante homogenea
+ de los triángulos que lo en cuanto a distribución espacial, haciendo muy
+ conveniente el uso de octrees en estos casos.
+ Es por esto que se consideró a este como el mejor candidato a implementar
+ en la apliacción.
+\end_layout
+
+\begin_layout Standard
+Para la resolución de objetos que caen entre dos nodos del octree, se resolvió
+ que se objeto se guarda repetido (una vez en cada nodo).
+\end_layout
+
+\begin_layout Section
+Rendering
+\end_layout
+
+\begin_layout Standard
+Se implementaron tres métodos de rendering diferentes.
+ Estos son los siguientes:
+\end_layout
+
+\begin_layout Description
+Normal Se dibuja un mapa de normales de cada colisión.
+ No se calculan luces, refracciones ni reflejos.
+\end_layout
+
+\begin_layout Description
+Profundidad Se dibuja un mapa de prfundidad de cada colisión.
+ No se calculan luces, refracciones ni reflejos.
+\end_layout
+
+\begin_layout Description
+Luces Se dibuja el color la geometría que produjo la colisión.
+ Tiene en cuenta las luces, los reflejos y las refracciones.
+\end_layout
+
+\begin_layout Section
+Corrección de color
+\end_layout
+
+\begin_layout Standard
+Dependiendo de la situación, puede darse que los valores de los colores
+ resultantes tenga valores fuera de rango.
+ Para poder representar estos valores en una imagen, es necesario aplicar
+ algun método de corrección de color.
+ Se tienen implementados dos métodos para realizar el ajuste de rango:
+\end_layout
+
+\begin_layout Description
+Corte Cuando un valor se encuentra por encima de 
+\begin_inset Formula $1$
+\end_inset
+
+.
+ Se lo reemplaza por 
+\begin_inset Formula $1$
+\end_inset
+
+.
+ De lo contrario, queda sin cambios.
+\end_layout
+
+\begin_layout Description
+Dynamic
+\begin_inset space ~
+\end_inset
+
+Range
+\begin_inset space ~
+\end_inset
+
+Compression El método de corte produce que cualquier valor de color que
+ sea superior a 
+\begin_inset Formula $1$
+\end_inset
+
+ siempre se va a ver igual a cualquier otro valor superior a 
+\begin_inset Formula $1$
+\end_inset
+
+ (no importa de cuanto sea la diferecia).
+ Esto hace parecer que dos objetos se vean parecidos (o iguales) mas alla
+ de que en realidad no lo sean y sucede debdo a que se pierde la información
+ real del color al pisar su valor.
+ Este método se encarga de normalizar todos los valores según el máximo
+ que exista en la imagen (en ese canal).
+ Puede encontrarse una explicación mas detallada en 
+\begin_inset CommandInset href
+LatexCommand href
+target "http://en.wikipedia.org/wiki/Dynamic_range"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Multi Threading
+\end_layout
+
+\begin_layout Standard
+La división de tareas dentro de la aplicación se logra dividiendo la imagen
+ en conjuntos de filas de tamaño fijo (
+\begin_inset Formula $50$
+\end_inset
+
+ por default).
+ La cantidad de threads que van a crearse va a ser igual a la cantidad de
+ cores disponibles 
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+ver: https://docs.oracle.com/javase/7/docs/api/java/lang/Runtime.html#availableProc
+essors()
+\end_layout
+
+\end_inset
+
+ que tenga la 
+\begin_inset Formula $CPU$
+\end_inset
+
+ que se encuentre corriendo la aplicación.
+ 
+\end_layout
+
+\begin_layout Standard
+Cada uno de los threads va a a ir tomando de a un conjunto de filas y creando
+ el pedacito de imagen correspondiente.
+ Cada vez que un thread termina con las filas que se le fueron asignadas,
+ simplemente toma el próximo disponible y repite hasta que no queden más.
+ 
+\end_layout
+
+\begin_layout Standard
+El frame queda construido completamente cuando todos los threads terminan
+ su ejecución.
+\end_layout
+
+\begin_layout Section
+Configuración y ejecución
+\end_layout
+
+\begin_layout Standard
+Parametros aceptados por linea de comandos:
+\end_layout
+
+\begin_layout Description
+help Opcional.
+ Flag.
+ Imprime la lista de parametros y lo que cada uno significa.
+\end_layout
+
+\begin_layout Description
+o Opcional.
+ Nombre del archivo de salida.
+\end_layout
+
+\begin_layout Description
+i Nombre del archivo lux de entrada.
+\end_layout
+
+\begin_layout Description
+time Opcional.
+ Flag.
+ Mediciones de los tiempos empleados en el render.
+\end_layout
+
+\begin_layout Description
+aa Numerico.
+ Cantidad de muestras de antialiasing.
+\end_layout
+
+\begin_layout Description
+benchmark Opcional.
+ Numérico.
+ Cantidad de frames consecutivos a crear.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+La creacion del archivo fisico (PNG) se realiza únicamente para el primer
+ frame.
+\end_layout
+
+\end_deeper
+\begin_layout Description
+d Opcional.
+ Numérico.
+ Define el ray depth de reflejos y refracciones.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+La profundidad para las refracciones va a ser el valor de (d + 2)
+\end_layout
+
+\end_deeper
+\begin_layout Description
+r Opcional.
+ Define el tipo de render a usar.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Valores: normal, distance, light.
+\end_layout
+
+\end_deeper
+\begin_layout Description
+correction Opcional.
+ Tipo de correción de la imagen.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+d Método de compresión de rango dinámico.
+\end_layout
+
+\begin_layout Description
+c Método de corte.
+\end_layout
+
+\end_deeper
+\begin_layout Description
+gui Opcional.
+ Flag.
+ Abrir interfaz gráfica.
+ Consideraciones: Tiene como única intención el debugging de una escena.
+ Esta aún en etapa alpha.
+\end_layout
+
+\begin_layout Description
+pathtracer Opcional.
+ Utilizar metodo de path tracing
+\end_layout
+
+\begin_layout Description
+tr Define el la cantidad de hops que un camino puede tener (solo ­pathtracer)
+\end_layout
+
+\begin_layout Description
+s Define la cantidad de samples por pixel (solo ­pathtracer)
+\end_layout
+
+\begin_layout Section
+Ejemplos
+\end_layout
+
+\begin_layout Standard
+Todas las imagenes de prueba (y videos) se encuentran en la carpeta 
+\shape italic
+samples/pictures
+\shape default
+ y 
+\shape italic
+samples/videos 
+\shape default
+del repositorio.
+\end_layout
+
+\begin_layout Section
+Fuentes consultadas
+\end_layout
+
+\begin_layout Itemize
+Fundamentals of Computer Graphics.
+ Third edition.
+ Peter Shirley
+\end_layout
+
+\begin_layout Itemize
+Ray Tracing From The Ground Up.
+ Kevin Suffern.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+target "http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.cs.rpi.edu/~cutler/classes/advancedgraphics/F05/lectures/13_ray_tracing.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.cs.utah.edu/~shirley/books/fcg2/rt.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+target "http://courses.cs.washington.edu/courses/cse457/10au/lectures/markup/ray-tracing-markup.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "https://en.wikipedia.org/wiki/Schlick's_approximation"
+target "https://en.wikipedia.org/wiki/Schlick%27s_approximation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "http://ruh.li/GraphicsCookTorrance.html"
+target "http://ruh.li/GraphicsCookTorrance.html"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Computación Gráfica - Clase 7, 8, 9 y 10
+\end_layout
+
+\end_body
+\end_document

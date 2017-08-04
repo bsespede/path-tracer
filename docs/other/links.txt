@@ -1,0 +1,28 @@
+Pipeline + Equaciones necesarias:
+
+	http://antongerdelan.net/opengl/raycasting.html
+
+http://www-f9.ijs.si/~matevz/docs/PovRay-3.50b/povdoc_212.html
+
+http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
+
+-- Aca hay muchos mas pdfs con cosas mas copdas, dejo uno de los links
+http://www.cs.rpi.edu/~cutler/classes/advancedgraphics/F05/lectures/13_ray_tracing.pdf
+http://www.cs.utah.edu/~shirley/books/fcg2/rt.pdf
+
+
+http://www.luxrender.net/forum/viewtopic.php?f=37&t=5940&start=20
+http://www.luxrender.net/forum/viewforum.php?f=37&sid=cf2d32b9c3696ab34e20ac549b012f7c
+
+# Link donde se explica (entre varias otras formulas) como se hacen las sombras con objetos transparentes
+http://courses.cs.washington.edu/courses/cse457/10au/lectures/markup/ray-tracing-markup.pdf
+
+
+# Path tracing
+
+http://cg.informatik.uni-freiburg.de/course_notes/graphics2_09_pathTracing.pdf
+http://pellacini.di.uniroma1.it/teaching/graphics09/lectures/18_PathTracing.pdf
+
+# Cook torrance
+
+http://ruh.li/GraphicsCookTorrance.html

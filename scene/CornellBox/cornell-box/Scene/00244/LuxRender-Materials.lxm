@@ -1,0 +1,25 @@
+# Materials File
+
+MakeNamedMaterial "Material.004"
+	"color Kd" [1.00000000 0.68010044 0.35505956]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.001"
+	"color Kd" [0.52771801 0.01122949 0.00588160]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.002"
+	"color Kd" [0.00580993 0.20190039 0.01986457]
+	"float sigma" [0.000000000000000]
+	"string type" ["matte"]
+
+MakeNamedMaterial "Material.005"
+	"float film" [0.000000000000000]
+	"float filmindex" [1.333299994468689]
+	"color Kr" [0.69999999 0.69999999 0.69999999]
+	"string type" ["mirror"]
+
+MakeNamedMaterial "Area"
+	"string type" ["null"]
